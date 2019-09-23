@@ -1,0 +1,15 @@
+# Vision Secondary Service
+[Unit]
+Description=FRC 1073 Vision Secondary Service
+After=network.target
+
+[Service]
+Type=simple
+Restart=always
+RestartSec=1
+User=todd
+WorkingDirectory=/home/todd/Projects/nanovision/scripts
+ExecStart=/home/todd/Projects/nanovision/scripts/webcam /dev/video1 127.0.0.1
+
+[Install]
+WantedBy=multi-user.target

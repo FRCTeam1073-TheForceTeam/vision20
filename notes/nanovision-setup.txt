@@ -1,0 +1,119 @@
+Primary information on JetsonNano is at:
+https://developer.nvidia.com/embedded-computing
+
+Create Initial Nvidia JetPack 4.2.2 / L4T 32.2 Linux SD Card Image
+Run through initial boot setup for timezone, language and
+accepting NVIDIA licenses.
+Create an account to be the primary account.
+Must be connected to an Ethernet network or on WiFi with internet access.
+
+Once the basic system setup is done reboot the system
+and log into it.
+
+Start a terminal and install software dependencies.
+Must be connected to an Ethernet network or on WiFi with internet access.
+
+With sudo you will need to type in your admin password.
+
+1. Update package sources and update system: 
+sudo apt-get update
+sudo apt-get upgrade
+
+2. Install development packages, git and clean up:
+sudo apt-get install nano cmake gstreamermm-1.0-dev screen v4l-utils git-core
+sudo apt-get install emacs curl wget
+sudo apt autoremove
+
+3. Make a project work directory and go there:
+mkdir Projects
+cd Projects
+
+4. Check out some helpful repositories that we'll use:
+git clone https://github.com/JetsonHacksNano/installSwapfile
+git clone https://github.com/wpilibsuite/allwpilib.git
+git clone https://github.com/gstreamer/gst-plugins-good
+git clone https://github.com/gstreamer/gst-plugins-base
+
+5. Go into the installSwapfile directory and set up swapfile:
+cd installSwapfile
+./installSwapfile.sh
+
+Now you have the basic dev. tools and a swapfile for extra memory
+space when compiling code on the Nano.
+
+6. Build C++ wpilib network tables locally for Nano:
+cd ~/Projects/allwpiplib
+git checkout v2019.4.1
+mkdir cmake-build
+cd cmake-build
+cmake -DWITHOUT_JAVA=ON -DWITHOUT_CSCORE=ON -DWITHOUT_ALLWPILIB=ON ..
+make -j 2
+sudo make install
+NOTE: You may need your password for install
+NOTE: This will take a long time... 
+
+At this point you have an embedded ARM64 Liunx machine with:
+- NVIDIA SDKs for hardware accelerated vision processing 
+  - CUDA-SDK	(installed in /usr/local/cuda)
+  - cuDNN	(installed in /usr/include and /usr/lib)
+  - OpenCV	(installed in /usr/include and /usr/lib)
+- Gstreamer-1.0 suite of plugins.
+- Hardware accelerated GStreamer-1.0 plugins for video processing.
+- Gstreamermm-1.0 C++ gstreamer development library
+- Hardware support for MIPI-CSI camera drivers.
+- The core WPILib libraries for C++ (installed in /usr/local/wpilib)
+  - You can write C++ code to talk network tables on the Nano.
+- You also have the powerful CMake build system installed for making your
+	own C++ projects or other dependency libraries.
+
+7. Now we're going to add in the DeepStream SDK which provides some
+hardware accelerated netural network processing:
+https://docs.nvidia.com/metropolis/deepstream/4.0/dev-guide/index.html
+
+Dowload the SDK from the link above. Note that this requires a free
+developer membership sign-up with NVIDIA Developers.
+
+Follow the setup instructions for downloaing the SDK and installing it.
+
+You will also need to clear the gstreamer cache to make sure things
+run smoothly:
+rm ${HOME}/.cache/gstreamer-1.0/registry.aarch64.bin
+
+
+8. Lastly we're going to download and build an excellent C++ vision
+and machine learning library called dlib.
+git clone https://github.com/
+
+TODO...
+
+
+9. There is some additional machine setup that is helpful. You should add
+the user account you're going to use for video processsing to the 'video'
+group in Linux so that it can access video devices:
+
+sudo usermode -a -G video <user account name>
+
+
+10. Autostart setup: Reading this link can be helpful in seeing how this works.
+https://medium.com/@benmorel/creating-a-linux-service-with-systemd-611b5c8b91d6
+
+The autostart files need to get copied/installed into /etc/systemd/system/xxx.service and then the systemctl command can manage them through systemctl commands.
+
+# Run this command after adding any new service files to
+# /etc/systemd/system
+systemctl daemon-reload
+
+# Runs the service
+systemctl start <service name>
+
+# Stops the service
+systemctl stop <service name>
+
+
+# Set it to automatically run on boot
+systemctl enable <service name>
+
+
+# Shows the status of the service.
+systemctl status <service name>
+

@@ -7,9 +7,9 @@ After=network.target
 Type=simple
 Restart=always
 RestartSec=1
-User=todd
-WorkingDirectory=/home/todd/Projects/nanovision/scripts
-ExecStart=/home/todd/Projects/nanovision/scripts/webcam /dev/video1 127.0.0.1
+User=team1073
+WorkingDirectory=/home/team1073/vision20/scripts
+ExecStart=/home/team1073/vision20/scripts/webcam /dev/video1 10.10.73.200
 
 [Install]
 WantedBy=multi-user.target

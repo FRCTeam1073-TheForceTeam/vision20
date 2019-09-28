@@ -1,14 +1,15 @@
 [connection]
-id=RobotHardCoded
-uuid=7a27b2e3-f88e-450b-b6fc-41a9a80b602c
+id=Wired connection 1
+uuid=d722b441-5edf-3a6c-ac96-31978ca64e19
 type=ethernet
+autoconnect-priority=1
 interface-name=eth0
 permissions=
-timestamp=1568240086
+timestamp=1569639342
 
 [ethernet]
 auto-negotiate=true
-mac-address=00:E0:4C:68:01:89
+mac-address=00:04:4B:E6:65:2F
 mac-address-blacklist=
 
 [ipv4]

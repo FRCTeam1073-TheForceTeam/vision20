@@ -117,3 +117,35 @@ systemctl enable <service name>
 # Shows the status of the service.
 systemctl status <service name>
 
+
+Network Setup
+
+In our testing the JetsonNano has problems connecting to the FRC radio
+modules over Ethernet. There appears to be some sort of
+Ethernet/interface connection issue between the Radios and the
+Jetson. To avoid these problems there is an example hardline
+connection file for the robot called "RobotHardline" that should be
+placed in:
+
+/etc/NetworkManager/system-connections/
+
+This serves as the basic network configuration for the vision
+machines.  You need to replace the ethernet MAC ID in the file with
+the MAC ID of the hardware (JetsonNano) you are on. You can read the
+MAC ID by typing
+
+ifconfig eth0
+
+
+
+
+
+
+Hardware Reference
+
+Beyond the NVIDIA reference documentation on their site, there is this
+site with quick pinout diagrams for the development board that is very
+handy for figuring out where things go:
+https://www.element14.com/community/community/designcenter/single-board-computers/blog/2019/05/21/nvidia-jetson-nano-developer-kit-pinout-and-diagrams
+
+

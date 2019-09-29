@@ -12,7 +12,7 @@ mac-address=00:E0:4C:68:01:89
 mac-address-blacklist=
 
 [ipv4]
-address1=10.10.73.5/24,10.10.73.1
+address1=10.10.73.3/24,10.10.73.1
 dns-search=
 may-fail=false
 method=manual

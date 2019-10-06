@@ -20,8 +20,11 @@ int main(int argc, char* argv[]) {
   std::cerr << "GSTVISION: Basic Test." << std::endl;
 
   gv::Pipeline::init(&argc, &argv);
-  
-  pipeline = gv::Pipeline::create(build_pipeline_def());
+
+  std::string pipeline_def =
+    gv::build_nanocam_compression_def(60, 600000, "127.0.0.1", 5801);
+  std::cerr << "PIPELINE: " << std::endl << pipeline_def << std::endl;
+  pipeline = gv::Pipeline::create(pipeline_def);
   
   // Register interrupt handler before running pipeline.
   // connect shutdown signal callback for clean shutdown behavior:

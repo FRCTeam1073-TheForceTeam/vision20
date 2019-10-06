@@ -66,5 +66,20 @@ namespace gv {
     class Impl;
     std::unique_ptr<Impl> _impl;
   };
+
+  /** \brief Builds standard nano camera compression pipeline definition.
+   *
+   */
+  std::string build_nanocam_compression_def(int fps, int bps,
+					    const std::string& to_host,
+					    int to_port);
+  
+  /** \brief Builds standard web camera compression pipeline definition.
+   *
+   */
+  std::string build_webcam_compression_def(const std::string& cam_dev,
+					   int fps, int bps,
+					   const std::string& to_host,
+					   int to_port);
   
 }

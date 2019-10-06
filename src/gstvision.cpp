@@ -3,6 +3,8 @@
 #include <glib.h>
 #include <iostream>
 #include <thread>
+#include <mutex>
+#include <sstream>
 
 namespace gv {
 
@@ -142,8 +144,29 @@ namespace gv {
 					gpointer data) {
     
     Pipeline::Impl* pImpl = static_cast<Pipeline::Impl*>(data);
-    
+
+    gchar  *debug = nullptr;
+    GError *error = nullptr;
+
     switch (GST_MESSAGE_TYPE (message)) {
+
+
+    case GST_MESSAGE_WARNING:
+      gst_message_parse_warning(message, &error, &debug);
+      g_free (debug);
+      std::cerr << "BUS WARNING: " << error->message << std::endl;
+      g_error_free (error);
+      break;
+    case GST_MESSAGE_INFO:
+      gst_message_parse_info(message, &error, &debug);
+      g_free (debug);
+      std::cerr << "BUS INFO: " << error->message << std::endl;
+      g_error_free (error);
+      break;
+      
+    case GST_MESSAGE_PROPERTY_NOTIFY:
+      std::cerr << "BUS PROPERTY CHANGE:" << std::endl;
+      break;
 
     case GST_MESSAGE_EOS:
       std::cerr << "BUS MESSAGE: " << std::endl;
@@ -152,9 +175,6 @@ namespace gv {
       break;
 
     case GST_MESSAGE_ERROR: {
-      gchar  *debug;
-      GError *error;
-
       gst_message_parse_error (message, &error, &debug);
       g_free (debug);
       
@@ -170,6 +190,39 @@ namespace gv {
     }
 
     return TRUE;
+  }
+
+
+  std::string build_nanocam_compression_def(int fps, int bps,
+					    const std::string& to_host,
+					    int to_port) {
+
+    std::ostringstream def;
+    def << "nvarguscamerasrc name=camera do-timestamp=true ! ";
+    def << "video/x-raw(memory:NVMM),format=(string)NV12,width=(int)1280,height=(int)720,framerate=" << fps << "/1 ! ";
+    def << "nvvidconv name=converter flip-method=0 ! ";
+    def << "video/x-raw(memory:NVMM),width=(int)640,height=(int)360,format=(string)I420 ! ";
+    def << "omxh264enc name=encoder control-rate=2 bitrate=" << bps << " profile=1 preset-level=1 ! ";
+    def << "video/x-h264,framerate=" << fps << "/1,stream-format=(string)byte-stream ! ";
+    def << "h264parse name=parser ! rtph264pay name=payloader config-interval=1 ! udpsink name=udpsink host=" << to_host << " port=" << to_port;
+
+    return def.str();
+  }
+
+  std::string build_webcam_compression_def(const std::string& cam_dev,
+					   int fps, int bps,
+					   const std::string& to_host,
+					   int to_port) {
+    std::ostringstream def;
+    def << "v4l2src name=camera device=" << cam_dev << " ! ";
+    def << "video/x-raw,format=(string)YUY2,width=(int)320,height=(int)240,framerate=" << fps << "/1 ! ";
+    def << "nvvidconv name=converter flip-method=0 ! ";
+    def << "video/x-raw(memory:NVMM),width=(int)320,height=(int)240,format=(string)NV12 ! ";
+    def << "omxh264enc name=encoder control-rate=2 bitrate=" << bps << " profile=1 preset-level=1 ! ";
+    def << "video/x-h264,framerate=" << fps << "/1, stream-format=(string)byte-stream ! ";
+    def << "h264parse name=parser ! rtph264pay name=payloader config-interval=1 ! udpsink name=udpsink host=" << to_host << " port=" << to_port;
+
+    return def.str();
   }
 
 }

@@ -26,6 +26,10 @@ namespace gv {
 				 GstMessage* message,
 				 gpointer data);
 
+    StringVector list_elements();
+
+    GstElement* find_element(const std::string& name);
+
   protected:
 
     // Internal thread function:
@@ -56,8 +60,7 @@ namespace gv {
 
 
   StringVector Pipeline::list_elements() const {
-    StringVector result;
-    return result;
+    return _impl->list_elements();
   }
 
   void Pipeline::run() {
@@ -95,6 +98,31 @@ namespace gv {
     }
     g_source_remove(_bus_watch_id);
     g_main_loop_unref(_main_loop);
+  }
+
+  StringVector Pipeline::Impl::list_elements() {
+    StringVector result;
+    GstBin* pBin = GST_BIN(_pipeline);
+    GstIterator* iterator = gst_bin_iterate_elements(pBin);
+    if (nullptr != iterator) {
+
+      GValue element = G_VALUE_INIT;
+      while(gst_iterator_next(iterator, &element) == GST_ITERATOR_OK) {
+
+	GstElement* pElement = GST_ELEMENT(g_value_get_object(&element));
+
+	char *name = gst_element_get_name(pElement);
+	if (nullptr != name) {
+	  result.push_back(std::string(name));
+	}
+	g_free(name);
+
+	g_value_unset(&element);
+      }
+
+      gst_iterator_free(iterator);
+    }
+    return result;
   }
 
   void Pipeline::Impl::build(const std::string& pipeline_description) {
@@ -137,6 +165,11 @@ namespace gv {
     gst_element_set_state(_pipeline, GST_STATE_PLAYING);
     g_main_loop_run(_main_loop);
     gst_element_set_state(_pipeline, GST_STATE_NULL);
+  }
+
+  GstElement* Pipeline::Impl::find_element(const std::string& name) {
+    GstBin* pBin = GST_BIN(_pipeline);
+    return gst_bin_get_by_name(pBin, name.c_str());
   }
 
   gboolean Pipeline::Impl::bus_callback(GstBus* bus,
@@ -201,7 +234,7 @@ namespace gv {
     def << "nvarguscamerasrc name=camera do-timestamp=true ! ";
     def << "video/x-raw(memory:NVMM),format=(string)NV12,width=(int)1280,height=(int)720,framerate=" << fps << "/1 ! ";
     def << "nvvidconv name=converter flip-method=0 ! ";
-    def << "video/x-raw(memory:NVMM),width=(int)640,height=(int)360,format=(string)I420 ! ";
+    def << "video/x-raw(memory:NVMM),width=(int)640,height=(int)360,format=(string)NV12 ! ";
     def << "omxh264enc name=encoder control-rate=2 bitrate=" << bps << " profile=1 preset-level=1 ! ";
     def << "video/x-h264,framerate=" << fps << "/1,stream-format=(string)byte-stream ! ";
     def << "h264parse name=parser ! rtph264pay name=payloader config-interval=1 ! udpsink name=udpsink host=" << to_host << " port=" << to_port;
@@ -224,5 +257,24 @@ namespace gv {
 
     return def.str();
   }
+
+    std::string build_nanocam_vision_def(int fps, int bps,
+					 const std::string& to_host,
+					 int to_port) {
+
+    std::ostringstream def;
+    def << "nvarguscamerasrc name=camera do-timestamp=true ! ";
+    def << "video/x-raw(memory:NVMM),format=(string)NV12,width=(int)1280,height=(int)720,framerate=" << fps << "/1 ! ";
+    def << "nvvidconv name=converter flip-method=0 ! ";
+    def << "video/x-raw(memory:NVMM),width=(int)640,height=(int)360,format=(string)NV12 ! ";
+    def << "nvtee name=tee ! queue name=compression_queue !";
+    def << "omxh264enc name=encoder control-rate=2 bitrate=" << bps << " profile=1 preset-level=1 ! ";
+    def << "video/x-h264,framerate=" << fps << "/1,stream-format=(string)byte-stream ! ";
+    def << "h264parse name=parser ! rtph264pay name=payloader config-interval=1 ! udpsink name=udpsink host=" << to_host << " port=" << to_port;
+    def << " tee. ! queue name=vision_queue ! appsink name=vision_sink";
+
+    return def.str();
+  }
+
 
 }

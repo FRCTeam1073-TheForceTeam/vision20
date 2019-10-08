@@ -21,9 +21,11 @@ int main(int argc, char* argv[]) {
 
   gv::Pipeline::init(&argc, &argv);
 
+  //  std::string pipeline_def = build_pipeline_def();
   std::string pipeline_def =
     gv::build_nanocam_compression_def(60, 600000, "127.0.0.1", 5801);
   std::cerr << "PIPELINE: " << std::endl << pipeline_def << std::endl;
+  
   pipeline = gv::Pipeline::create(pipeline_def);
 
   // List the elements:
@@ -56,7 +58,7 @@ int main(int argc, char* argv[]) {
 std::string build_pipeline_def() {
   std::string pipeline_def;
 
-  pipeline_def = "videotestsrc ! autovideosink";
+  pipeline_def = "videotestsrc name=foo ! autovideosink name=bar";
 
   return pipeline_def;
 }

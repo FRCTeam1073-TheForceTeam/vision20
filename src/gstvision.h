@@ -9,6 +9,39 @@ namespace gv {
 
   using StringVector = std::vector<std::string>;
 
+
+  /**\ brief The ImageProcessor defines an abstract class interface
+   * for processing and rendering images. This class is designed
+   * to work in conjunction with a named appsrc and appsink in your
+   * gstreamer pipeline.
+   *
+   */
+  class ImageProcessor {
+  public:
+    using Handle = std::shared_ptr<ImageProcessor>;
+
+    class ImageBuffer {
+    public:
+
+      ImageBuffer();
+      
+      size_t         width;
+      size_t         height;
+      unsigned char *data;
+      size_t         data_size;
+    };
+
+    ImageProcessor() = default;
+    virtual ~ImageProcessor() = default;
+
+    virtual void process_image(ImageBuffer& image) = 0;
+    virtual void render_image(ImageBuffer& image) = 0;
+    
+  protected:
+
+  };
+
+
   /** \brief The Pipeline class wraps a gstreamer-1.0 pipeline created
    * from the gstreamer-1.0 string definition and manages that
    * pipeline for you. It isolates you from most of the gstreamer
@@ -52,6 +85,10 @@ namespace gv {
     /// Set a ratio property on a named element.
     void set_property(const std::string& element, const std::string& property,
 		      int numerator, int denominator=1);
+
+
+    void register_image_processor(const std::string& name,
+				  ImageProcessor::Handle processor);
 
     /// Default destructor.
     virtual ~Pipeline() = default;

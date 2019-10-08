@@ -1,10 +1,12 @@
 #include <gstvision.h>
 #include <gst/gst.h>
+#include <gst/app/app.h>
 #include <glib.h>
 #include <iostream>
 #include <thread>
 #include <mutex>
 #include <sstream>
+#include <map>
 
 namespace gv {
 
@@ -14,19 +16,50 @@ namespace gv {
   class Pipeline::Impl {
   public:
     friend class Pipeline;
+
+    struct ProcessorRegistration {
+      ImageProcessor::Handle processor;
+      GstAppSink* app_sink;
+      GstAppSrc* app_source;
+    };
+    
+    using ProcessorMap = std::map<std::string, ProcessorRegistration>;
+    
     
     Impl();
     ~Impl();
 
+    StringVector list_elements();
+    
     void build(const std::string& pipeline_description);
+    
     void run();
+    
     void stop();
 
+    void set_property(const std::string& element, const std::string& property,
+		      const std::string& value);
+
+    void set_property(const std::string& element, const std::string& property,
+		      int value);
+
+    void set_property(const std::string& element, const std::string& property,
+		      int numerator, int denominator);
+
+    void register_image_processor(const std::string& name,
+    				  ImageProcessor::Handle processor);
+
+    // Callback from pipeline bus events:
     static gboolean bus_callback(GstBus* bus,
 				 GstMessage* message,
 				 gpointer data);
 
-    StringVector list_elements();
+
+    // Callback from appsink on samples:
+    static GstFlowReturn new_sample(GstAppsink* sink, gpointer* data);
+    static GstFlowReturn new_preroll(GstAppsink* sink, gpointer* data);
+
+
 
     GstElement* find_element(const std::string& name);
 
@@ -39,6 +72,7 @@ namespace gv {
     GstElement*  _pipeline;
     GMainLoop*   _main_loop;
     guint        _bus_watch_id;
+    ProcessorMap _image_processors;
   };
   
 
@@ -76,6 +110,23 @@ namespace gv {
     return true;
   }
 
+  void Pipeline::set_property(const std::string& element,
+			      const std::string& property,
+			      const std::string& value) {
+    _impl->set_property(element, property, value);
+  }
+
+  void Pipeline::set_property(const std::string& element,
+			      const std::string& property,
+			      int value) {
+    _impl->set_property(element, property, value);
+  }
+
+  void Pipeline::set_property(const std::string& element,
+			      const std::string& property,
+			      int numerator, int denominator) {
+    _impl->set_property(element, property, numerator, denominator);
+  }
 
   Pipeline::Pipeline() : _impl(new Pipeline::Impl) {
     
@@ -85,6 +136,11 @@ namespace gv {
     _impl->build(pipeline_description);
   }
 
+
+  void Pipeline::register_image_processor(const std::string& name,
+					  ImageProcessor::Handle processor) {
+    _impl->register_image_processor(name, processor);
+  }
 
 
   Pipeline::Impl::Impl() {
@@ -161,6 +217,37 @@ namespace gv {
     }
   }
 
+
+  void Pipeline::Impl::set_property(const std::string& element,
+				    const std::string& property,
+				    const std::string& value) {
+    GstElement* el = find_element(element);
+    if (nullptr != el) {
+      g_object_set(G_OBJECT(el),property.c_str(), value.c_str(), nullptr);
+    } else {
+      throw std::runtime_error("Element not found.");
+    }
+  }
+
+  void Pipeline::Impl::set_property(const std::string& element,
+				    const std::string& property,
+				    int value) {
+    GstElement* el = find_element(element);
+    if (nullptr != el) {
+      g_object_set(G_OBJECT(el),property.c_str(), value, nullptr);
+    } else {
+      throw std::runtime_error("Element not found.");
+    }
+  }
+
+  void Pipeline::Impl::set_property(const std::string& element,
+				    const std::string& property,
+				    int numerator, int denominator) {
+    // TODO: Unimplemented.
+    throw std::logic_error("Unimplemented method.");
+  }
+
+
   void Pipeline::Impl::thread_function() {
     gst_element_set_state(_pipeline, GST_STATE_PLAYING);
     g_main_loop_run(_main_loop);
@@ -226,10 +313,68 @@ namespace gv {
   }
 
 
+  static GstFlowReturn new_preroll(GstAppsink* sink,
+				   gpointer* data) {
+    return GST_FLOW_OK;
+  }
+
+  /// Route callback to C++ client:
+  static GstFlowReturn Pipeline::Impl::new_sample(GstAppsink* sink,
+						  gpointer* data) {
+    // Get caps and frame
+    GstSample *sample = gst_app_sink_pull_sample(appsink);
+    GstCaps *caps = gst_sample_get_caps(sample);
+    GstBuffer *buffer = gst_sample_get_buffer(sample);
+    GstStructure *structure = gst_caps_get_structure(caps, 0);
+    const int width =
+      g_value_get_int(gst_structure_get_value(structure, "width"));
+    const int height =
+      g_value_get_int(gst_structure_get_value(structure, "height"));
+
+    // Show caps on first frame
+    //    if(!framecount) {
+    //        g_print("caps: %s\n", gst_caps_to_string(caps));
+    //    }
+    //    framecount++;
+
+    // Get frame data
+    GstMapInfo map;
+    gst_buffer_map(buffer, &map, GST_MAP_READ);
+
+    // Call processing with image data:
+    std::cerr << ".";
+
+    gst_buffer_unmap(buffer, &map);
+    gst_sample_unref(sample)
+  }
+  
+
+
+  void Pipeline::Impl::register_image_processor(const std::string& name,
+						ImageProcessor::Handle processor) {
+    ProcessorRegistration pr;
+    pr.processor = processor;
+    pr.app_sink = (GstAppSink*) find_element(name+"_sink");
+    pr.app_source = (GstAppSrc*) find_element(name+"_source");
+    _image_processors[name] = pr;
+
+    // Now set up callbacks for this registration:
+    if (pr.app_sink != nullptr) {
+      gst_app_sink_set_emit_signals(pr.app_sink);
+      gst_app_sink_set_drop(pr.app_sink, true);
+      gst_app_sink_set_max_buffers(pr.app_sink, 1);
+      GstAppSinkCallbacks callbacks = {nullptr, Pipeline::Impl::new_preroll,
+				       Pipeline::Impl::new_sample};
+      gst_app_sink_set_callbacks(pr.app_sink, & callbacks, this, nullptr);
+    }
+    
+  }
+
+
+
   std::string build_nanocam_compression_def(int fps, int bps,
 					    const std::string& to_host,
 					    int to_port) {
-
     std::ostringstream def;
     def << "nvarguscamerasrc name=camera do-timestamp=true ! ";
     def << "video/x-raw(memory:NVMM),format=(string)NV12,width=(int)1280,height=(int)720,framerate=" << fps << "/1 ! ";

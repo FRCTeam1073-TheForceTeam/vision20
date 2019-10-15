@@ -433,7 +433,8 @@ namespace gv {
   }
 
 
-  void Pipeline::Impl::need_data(GstAppSrc *src, guint length,
+  void Pipeline::Impl::need_data(GstAppSrc *src,
+				 guint length,
 				 gpointer user_data) {
     CallbackInfo* cb_info = static_cast<CallbackInfo*>(user_data);
 

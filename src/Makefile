@@ -6,25 +6,26 @@
 
 # Pull in the CXX flags for gstreamermm-1.0 library
 CXXFLAGS +=  $(shell pkg-config --cflags --libs gstreamer-1.0)
-CXXFLAGS += -fPIC -I.
+CXXFLAGS += -fPIC -I. -L.
 
-all: libgstvision.so basic_test vision_test
+all: libgstvision.a basic_test vision_test
 
 # Build gstvision wrapper library:
-libgstvision.so: gstvision.cpp gstvision.h
+libgstvision.a: gstvision.cpp gstvision.h
 	g++ -c -Wall $(<) $(CXXFLAGS)
-	g++ -shared gstvision.o $(CXXFLAGS) -o $@ -lgstapp-1.0
+	ar rvs $@ gstvision.o 
 
 # Build basic test of gstvision wrapper library:
-basic_test: basic_test.cpp libgstvision.so
+basic_test: basic_test.cpp libgstvision.a
 	g++ -c -Wall $(<) $(CXXFLAGS)
-	g++ basic_test.o -o $@ libgstvision.so -lgstapp-1.0
+	g++ basic_test.o -o $@  -lgstvision $(CXXFLAGS)  -lgstapp-1.0
 
-vision_test: vision_test.cpp libgstvision.so
+vision_test: vision_test.cpp libgstvision.a
 	g++ -c -Wall $(<) $(CXXFLAGS)
-	g++ vision_test.o -o $@ libgstvision.so -lgstapp-1.0
+	g++ vision_test.o -o $@  -lgstvision $(CXXFLAGS)  -lgstapp-1.0
 
 clean:
-	rm -f libgstvision.so *.o
+	rm -f libgstvision.a *.o
 	rm -f basic_test
+	rm -f vision_test
 	rm -f *~

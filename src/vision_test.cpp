@@ -12,7 +12,9 @@ class TestProcessor: public gv::ImageProcessor {
 public:
   
   virtual void process_image(gv::ImageProcessor::ImageBuffer& image){
-    std::cerr << "P: " << image.width << ", " << image.height << std::endl;
+    std::cerr << "P: " << image.width << ", " << image.height <<
+      " Size: " << image.data_size << " Data: " << (void *)(image.data)
+	      << std::endl;
   }
   
   virtual void render_image(ImageBuffer& image) {
@@ -31,7 +33,7 @@ int main(int argc, char* argv[]) {
   gv::Pipeline::init(&argc, &argv);
 
   std::string pipeline_def =
-    gv::build_nanocam_vision_def(60, 600000, "127.0.0.1", 5801);
+    gv::build_nanocam_vision_def(60);
   std::cerr << "PIPELINE: " << std::endl << pipeline_def << std::endl;
 
   pipeline = gv::Pipeline::create(pipeline_def);

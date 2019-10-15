@@ -120,8 +120,10 @@ namespace gv {
 					   const std::string& to_host,
 					   int to_port);
 
-  std::string build_nanocam_vision_def(int fps, int bps,
-				       const std::string& to_host,
-				       int to_port);
+  std::string build_nanocam_vision_def(int fps);
+
+  std::string build_nanocam_vision_compression_def(int fps, int bps,
+						   const std::string& to_host,
+						   int to_port);
   
 }

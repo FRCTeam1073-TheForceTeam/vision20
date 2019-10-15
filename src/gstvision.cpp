@@ -488,9 +488,20 @@ namespace gv {
     return def.str();
   }
 
-    std::string build_nanocam_vision_def(int fps, int bps,
-					 const std::string& to_host,
-					 int to_port) {
+  std::string build_nanocam_vision_def(int fps) {
+    std::ostringstream def;
+    def << "nvarguscamerasrc name=camera do-timestamp=true ! ";
+    def << "video/x-raw(memory:NVMM),format=(string)NV12,width=(int)1280,height=(int)720,framerate=" << fps << "/1 ! ";
+    def << "nvvidconv name=converter flip-method=0 ! ";
+    def << "video/x-raw(memory:NVMM),width=(int)640,height=(int)360,format=(string)NV12 ! ";
+    def << "appsink sync=false name=vision_sink";
+
+    return def.str();
+  }
+
+  std::string build_nanocam_vision_compression_def(int fps, int bps,
+						   const std::string& to_host,
+						   int to_port) {
 
     std::ostringstream def;
     def << "nvarguscamerasrc name=camera do-timestamp=true ! ";

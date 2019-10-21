@@ -10,7 +10,7 @@
 
 namespace gv {
 
-  
+
 
   // Internal implementation class.
   class Pipeline::Impl {
@@ -22,7 +22,7 @@ namespace gv {
       GstAppSink* app_sink;
       GstAppSrc* app_source;
     };
-    
+
     using ProcessorMap = std::map<std::string, ProcessorRegistration>;
     
     

@@ -12,10 +12,11 @@ class TestProcessor: public gv::ImageProcessor {
 public:
   
   virtual void process_image(gv::ImageProcessor::ImageBuffer& image){
-
+    std::cerr << "P: " << image.width << ", " << image.height << std::endl;
   }
+  
   virtual void render_image(ImageBuffer& image) {
-    
+    std::cerr << "R: " << image.width << ", " << image.height << std::endl;
   }
 };
 

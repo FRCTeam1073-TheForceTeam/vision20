@@ -92,6 +92,9 @@ namespace gv {
 
     /// Default destructor.
     virtual ~Pipeline() = default;
+
+    class Impl;
+    std::unique_ptr<Impl> _impl;
     
   private:
     Pipeline();
@@ -100,8 +103,6 @@ namespace gv {
      */
     void build(const std::string& pipeline_description);
 
-    class Impl;
-    std::unique_ptr<Impl> _impl;
   };
 
   /** \brief Builds standard nano camera compression pipeline definition.

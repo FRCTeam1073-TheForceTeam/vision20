@@ -11,6 +11,12 @@
 namespace gv {
 
 
+  ImageProcessor::ImageBuffer::ImageBuffer() :
+    width(0),
+    height(0),
+    data(0),
+    data_size(0) {
+  }
 
   // Internal implementation class.
   class Pipeline::Impl {
@@ -74,6 +80,19 @@ namespace gv {
     guint        _bus_watch_id;
     ProcessorMap _image_processors;
   };
+
+  class CallbackInfo {
+  public:
+    CallbackInfo(const std::string& name_, Pipeline::Impl* pipe_):
+      name(name_)
+      ,pipeline(pipe_) {};
+
+        
+    std::string     name;
+    Pipeline::Impl *pipeline;
+  };
+
+
   
 
   void Pipeline::init(int* argc, char** argv[]) {
@@ -320,7 +339,7 @@ namespace gv {
 
   /// Route callback to C++ client:
   GstFlowReturn Pipeline::Impl::new_sample(GstAppSink* appsink,
-						  gpointer data) {
+					   gpointer data) {
     // Get caps and frame
     GstSample *sample = gst_app_sink_pull_sample(appsink);
     GstCaps *caps = gst_sample_get_caps(sample);
@@ -330,6 +349,10 @@ namespace gv {
       g_value_get_int(gst_structure_get_value(structure, "width"));
     const int height =
       g_value_get_int(gst_structure_get_value(structure, "height"));
+
+
+    CallbackInfo* cb_info = static_cast<CallbackInfo*>(data);
+    
 
     // Show caps on first frame
     //    if(!framecount) {
@@ -341,9 +364,19 @@ namespace gv {
     GstMapInfo map;
     gst_buffer_map(buffer, &map, GST_MAP_READ);
 
-    // Call processing with image data:
-    std::cerr << ".";
+    gv::ImageProcessor::ImageBuffer image_buffer;
 
+    image_buffer.width = width;
+    image_buffer.height = height;
+    image_buffer.data_size = map.size;
+    image_buffer.data = map.data;
+
+    auto processor = cb_info->pipeline->_image_processors.find(cb_info->name);
+
+    if (processor != cb_info->pipeline->_image_processors.end()) {
+      processor->second.processor->process_image(image_buffer);
+    }
+    
     gst_buffer_unmap(buffer, &map);
     gst_sample_unref(sample);
   }
@@ -365,7 +398,9 @@ namespace gv {
       gst_app_sink_set_max_buffers(pr.app_sink, 1);
       GstAppSinkCallbacks callbacks = {nullptr, Pipeline::Impl::new_preroll,
 				       Pipeline::Impl::new_sample};
-      gst_app_sink_set_callbacks(pr.app_sink, & callbacks, this, nullptr);
+      CallbackInfo* pCallbackInfo = new CallbackInfo(name, this);
+      gst_app_sink_set_callbacks(pr.app_sink, & callbacks,
+				 pCallbackInfo, nullptr);
     }
     
   }

@@ -56,8 +56,8 @@ namespace gv {
 
 
     // Callback from appsink on samples:
-    static GstFlowReturn new_sample(GstAppsink* sink, gpointer* data);
-    static GstFlowReturn new_preroll(GstAppsink* sink, gpointer* data);
+    static GstFlowReturn new_sample(GstAppSink* sink, gpointer data);
+    static GstFlowReturn new_preroll(GstAppSink* sink, gpointer data);
 
 
 
@@ -313,14 +313,14 @@ namespace gv {
   }
 
 
-  static GstFlowReturn new_preroll(GstAppsink* sink,
-				   gpointer* data) {
+  GstFlowReturn Pipeline::Impl::new_preroll(GstAppSink* appsink,
+					    gpointer data) {
     return GST_FLOW_OK;
   }
 
   /// Route callback to C++ client:
-  static GstFlowReturn Pipeline::Impl::new_sample(GstAppsink* sink,
-						  gpointer* data) {
+  GstFlowReturn Pipeline::Impl::new_sample(GstAppSink* appsink,
+						  gpointer data) {
     // Get caps and frame
     GstSample *sample = gst_app_sink_pull_sample(appsink);
     GstCaps *caps = gst_sample_get_caps(sample);
@@ -345,7 +345,7 @@ namespace gv {
     std::cerr << ".";
 
     gst_buffer_unmap(buffer, &map);
-    gst_sample_unref(sample)
+    gst_sample_unref(sample);
   }
   
 
@@ -360,7 +360,7 @@ namespace gv {
 
     // Now set up callbacks for this registration:
     if (pr.app_sink != nullptr) {
-      gst_app_sink_set_emit_signals(pr.app_sink);
+      gst_app_sink_set_emit_signals(pr.app_sink, TRUE);
       gst_app_sink_set_drop(pr.app_sink, true);
       gst_app_sink_set_max_buffers(pr.app_sink, 1);
       GstAppSinkCallbacks callbacks = {nullptr, Pipeline::Impl::new_preroll,

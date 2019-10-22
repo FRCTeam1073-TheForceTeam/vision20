@@ -334,6 +334,7 @@ namespace gv {
 
   GstFlowReturn Pipeline::Impl::new_preroll(GstAppSink* appsink,
 					    gpointer data) {
+    std::cerr << "new_preroll" << std::endl;
     return GST_FLOW_OK;
   }
 
@@ -353,13 +354,8 @@ namespace gv {
 
     CallbackInfo* cb_info = static_cast<CallbackInfo*>(data);
     
-
-    // Show caps on first frame
-    //    if(!framecount) {
-    //        g_print("caps: %s\n", gst_caps_to_string(caps));
-    //    }
-    //    framecount++;
-
+    std::cerr << "new_sample" << std::endl;
+    
     // Get frame data
     GstMapInfo map;
     gst_buffer_map(buffer, &map, GST_MAP_READ);
@@ -385,6 +381,7 @@ namespace gv {
 
   void Pipeline::Impl::register_image_processor(const std::string& name,
 						ImageProcessor::Handle processor) {
+    std::cerr << "Register Image Processor: " << name << std::endl;
     ProcessorRegistration pr;
     pr.processor = processor;
     pr.app_sink = (GstAppSink*) find_element(name+"_sink");
@@ -393,6 +390,7 @@ namespace gv {
 
     // Now set up callbacks for this registration:
     if (pr.app_sink != nullptr) {
+      std::cerr << "Found " << name << "_sink" << std::endl;
       gst_app_sink_set_emit_signals(pr.app_sink, TRUE);
       gst_app_sink_set_drop(pr.app_sink, true);
       gst_app_sink_set_max_buffers(pr.app_sink, 1);
@@ -401,6 +399,10 @@ namespace gv {
       CallbackInfo* pCallbackInfo = new CallbackInfo(name, this);
       gst_app_sink_set_callbacks(pr.app_sink, & callbacks,
 				 pCallbackInfo, nullptr);
+    }
+    
+    if (pr.app_source != nullptr) {
+      std::cerr << "Found " << name << "_source" << std::endl;
     }
     
   }
@@ -447,11 +449,11 @@ namespace gv {
     def << "video/x-raw(memory:NVMM),format=(string)NV12,width=(int)1280,height=(int)720,framerate=" << fps << "/1 ! ";
     def << "nvvidconv name=converter flip-method=0 ! ";
     def << "video/x-raw(memory:NVMM),width=(int)640,height=(int)360,format=(string)NV12 ! ";
-    def << "nvtee name=tee ! queue name=compression_queue !";
+    def << "tee name=t ! queue name=compression_queue !";
     def << "omxh264enc name=encoder control-rate=2 bitrate=" << bps << " profile=1 preset-level=1 ! ";
     def << "video/x-h264,framerate=" << fps << "/1,stream-format=(string)byte-stream ! ";
     def << "h264parse name=parser ! rtph264pay name=payloader config-interval=1 ! udpsink name=udpsink host=" << to_host << " port=" << to_port;
-    def << " tee. ! queue name=vision_queue ! appsink name=vision_sink";
+    def << " t. ! queue name=vision_queue ! appsink name=vision_sink";
 
     return def.str();
   }

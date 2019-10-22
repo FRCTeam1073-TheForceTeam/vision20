@@ -65,7 +65,9 @@ namespace gv {
     static GstFlowReturn new_sample(GstAppSink* sink, gpointer data);
     static GstFlowReturn new_preroll(GstAppSink* sink, gpointer data);
 
-
+    // Callback from appsrc for new data:
+    static void need_data(GstAppSrc *src, guint length, gpointer user_data);
+    static void enough_data(GstAppSrc *src, gpointer user_data);
 
     GstElement* find_element(const std::string& name);
 
@@ -92,8 +94,6 @@ namespace gv {
     Pipeline::Impl *pipeline;
   };
 
-
-  
 
   void Pipeline::init(int* argc, char** argv[]) {
     guint major, minor, micro, nano;
@@ -334,7 +334,12 @@ namespace gv {
 
   GstFlowReturn Pipeline::Impl::new_preroll(GstAppSink* appsink,
 					    gpointer data) {
-    std::cerr << "new_preroll" << std::endl;
+    CallbackInfo* cb_info = static_cast<CallbackInfo*>(data);
+
+    if (cb_info != nullptr) {
+      std::cerr << "new_preroll[" << cb_info->name << "]" << std::endl;
+    }
+    
     return GST_FLOW_OK;
   }
 
@@ -353,31 +358,37 @@ namespace gv {
 
 
     CallbackInfo* cb_info = static_cast<CallbackInfo*>(data);
+
+    if (cb_info != nullptr) {
+      std::cerr << "new_sample" << std::endl;
     
-    std::cerr << "new_sample" << std::endl;
-    
-    // Get frame data
-    GstMapInfo map;
-    gst_buffer_map(buffer, &map, GST_MAP_READ);
+      // Get frame data
+      GstMapInfo map;
+      gst_buffer_map(buffer, &map, GST_MAP_READ);
 
-    gv::ImageProcessor::ImageBuffer image_buffer;
+      gv::ImageProcessor::ImageBuffer image_buffer;
 
-    image_buffer.width = width;
-    image_buffer.height = height;
-    image_buffer.data_size = map.size;
-    image_buffer.data = map.data;
+      image_buffer.width = width;
+      image_buffer.height = height;
+      image_buffer.data_size = map.size;
+      image_buffer.data = map.data;
 
-    auto processor = cb_info->pipeline->_image_processors.find(cb_info->name);
+      auto processor =
+	cb_info->pipeline->_image_processors.find(cb_info->name);
 
-    if (processor != cb_info->pipeline->_image_processors.end()) {
-      processor->second.processor->process_image(image_buffer);
+      if (processor != cb_info->pipeline->_image_processors.end()) {
+	processor->second.processor->process_image(image_buffer);
+      }
+      
+      gst_buffer_unmap(buffer, &map);
+    } else {
+      std::cerr << "CB INFO NULL!" << std::endl;
     }
     
-    gst_buffer_unmap(buffer, &map);
     gst_sample_unref(sample);
+    return GST_FLOW_OK;
   }
   
-
 
   void Pipeline::Impl::register_image_processor(const std::string& name,
 						ImageProcessor::Handle processor) {
@@ -390,11 +401,15 @@ namespace gv {
 
     // Now set up callbacks for this registration:
     if (pr.app_sink != nullptr) {
-      std::cerr << "Found " << name << "_sink" << std::endl;
+      std::cerr << "Pipeline Found: " << name << "_sink" << std::endl;
       gst_app_sink_set_emit_signals(pr.app_sink, TRUE);
       gst_app_sink_set_drop(pr.app_sink, true);
+      
+      // TODO: Look at setting better caps.
+      gst_app_sink_set_caps(pr.app_sink, gst_caps_new_any());
       gst_app_sink_set_max_buffers(pr.app_sink, 1);
-      GstAppSinkCallbacks callbacks = {nullptr, Pipeline::Impl::new_preroll,
+      GstAppSinkCallbacks callbacks = {nullptr,
+				       Pipeline::Impl::new_preroll,
 				       Pipeline::Impl::new_sample};
       CallbackInfo* pCallbackInfo = new CallbackInfo(name, this);
       gst_app_sink_set_callbacks(pr.app_sink, & callbacks,
@@ -402,9 +417,41 @@ namespace gv {
     }
     
     if (pr.app_source != nullptr) {
-      std::cerr << "Found " << name << "_source" << std::endl;
+      std::cerr << "Pipeline Found: " << name << "_source" << std::endl;
+      gst_app_src_set_emit_signals(pr.app_source, TRUE);
+      
+      // TODO: Look at setting better caps.
+      gst_app_src_set_caps(pr.app_source, gst_caps_new_any());
+      GstAppSrcCallbacks callbacks = {&Pipeline::Impl::need_data,
+				      &Pipeline::Impl::enough_data,
+				      nullptr};
+      CallbackInfo* pCallbackInfo = new CallbackInfo(name, this);
+      gst_app_src_set_callbacks(pr.app_source, & callbacks,
+				pCallbackInfo, nullptr);
     }
     
+  }
+
+
+  void Pipeline::Impl::need_data(GstAppSrc *src, guint length,
+				 gpointer user_data) {
+    CallbackInfo* cb_info = static_cast<CallbackInfo*>(user_data);
+
+    if (cb_info != nullptr) {
+      std::cerr << "need_data[" << cb_info->name << "]" << std::endl;
+    }
+    
+    // TODO: Make an empty image buffer and call the rendering callback.
+    // pass this buffer along to appsrc.
+  }
+  
+  void Pipeline::Impl::enough_data(GstAppSrc *src, gpointer user_data) {
+        CallbackInfo* cb_info = static_cast<CallbackInfo*>(user_data);
+    if (cb_info != nullptr) {
+      std::cerr << "enough_data[" << cb_info->name << "]" << std::endl;
+    }
+
+    // TODO:
   }
 
 
@@ -449,11 +496,11 @@ namespace gv {
     def << "video/x-raw(memory:NVMM),format=(string)NV12,width=(int)1280,height=(int)720,framerate=" << fps << "/1 ! ";
     def << "nvvidconv name=converter flip-method=0 ! ";
     def << "video/x-raw(memory:NVMM),width=(int)640,height=(int)360,format=(string)NV12 ! ";
-    def << "tee name=t ! queue name=compression_queue !";
+    def << "tee name=viz ! queue name=compression_queue !";
     def << "omxh264enc name=encoder control-rate=2 bitrate=" << bps << " profile=1 preset-level=1 ! ";
     def << "video/x-h264,framerate=" << fps << "/1,stream-format=(string)byte-stream ! ";
     def << "h264parse name=parser ! rtph264pay name=payloader config-interval=1 ! udpsink name=udpsink host=" << to_host << " port=" << to_port;
-    def << " t. ! queue name=vision_queue ! appsink name=vision_sink";
+    def << " viz. ! queue name=vision_queue ! appsink sync=false name=vision_sink";
 
     return def.str();
   }

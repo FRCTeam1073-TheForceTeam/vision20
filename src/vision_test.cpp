@@ -36,15 +36,6 @@ int main(int argc, char* argv[]) {
 
   pipeline = gv::Pipeline::create(pipeline_def);
 
-  // List the elements:
-  gv::StringVector elements = pipeline->list_elements();
-
-  std::cerr << "ELEMENTS: ";
-  for (const auto& element: elements) {
-    std::cerr << element << ", ";
-  }
-  std::cerr << std::endl;
-
   // Register interrupt handler before running pipeline.
   // connect shutdown signal callback for clean shutdown behavior:
   std::signal(SIGINT, on_SIGINT);

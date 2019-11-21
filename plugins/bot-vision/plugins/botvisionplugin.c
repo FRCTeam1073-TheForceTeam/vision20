@@ -55,12 +55,12 @@ plugin_init (GstPlugin * plugin)
   gst_element_register (plugin, "vision",
 			GST_RANK_NONE,
 			BOT_TYPE_VISION);
-  gst_element_register (plugin, "hud_overlay",
+  gst_element_register (plugin, "hudoverlay",
 			GST_RANK_NONE,
 			BOT_TYPE_HUDOVERLAY);
 
   return TRUE;
 }
 
-GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR, vision, "Robotics Vision Plugin", plugin_init, VERSION, "LGPL", 
+GST_PLUGIN_DEFINE (GST_VERSION_MAJOR, GST_VERSION_MINOR, botvisionplugin, "Robotics Vision Plugin", plugin_init, VERSION, "LGPL", 
     "FRC1073", "http://frc1073.org/")

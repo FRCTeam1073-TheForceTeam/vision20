@@ -68,11 +68,11 @@ enum
 
 /* pad templates */
 
-/* FIXME: add/remove formats you can handle */
+/* Add/remove formats you can handle */
 #define VIDEO_SRC_CAPS \
     GST_VIDEO_CAPS_MAKE("{ NV12, I420, Y444, Y42B, UYVY, RGBA }")
 
-/* FIXME: add/remove formats you can handle */
+/* Add/remove formats you can handle */
 #define VIDEO_SINK_CAPS \
     GST_VIDEO_CAPS_MAKE("{ NV12, I420, Y444, Y42B, UYVY, RGBA }")
 

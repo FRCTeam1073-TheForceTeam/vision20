@@ -25,30 +25,15 @@ while(True):
 
     # Capture frame-by-frame
     ret, frame = capture.read()
+    # Draw target lines over the video.
+    cv2.line(frame, (320,0), (320,360), (50,100,0), 2)
+    cv2.line(frame, (0,180), (640,180), (50,100,0), 2)
+    output.write(frame);
     
     frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     edges = cv2.Canny(frame2, 50, 150, None, 3)
-#    cv2.imshow('edges', edges)
 
-    lines = cv2.HoughLines(edges,2, np.pi/90.0, 120)
     
-    if lines is not None:
-        for i in range(0, len(lines)):
-            rho = lines[i][0][0]
-            theta = lines[i][0][1]
-            a = math.cos(theta)
-            b = math.sin(theta)
-            x0 = a * rho
-            y0 = b * rho
-            pt1 = (int(x0 + 1000*(-b)), int(y0 + 1000*(a)))
-            pt2 = (int(x0 - 1000*(-b)), int(y0 - 1000*(a)))
-            cv2.line(frame, pt1, pt2, (0,0,200), 3, cv2.LINE_AA)
-
-            
-#    cv2.imshow('frame', frame)
-
-    output.write(frame);
-
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 

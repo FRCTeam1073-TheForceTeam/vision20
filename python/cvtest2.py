@@ -23,27 +23,47 @@ if output.isOpened():
 else:
     print "Video output pipeline creation failed!"
 
+# Blob detector parameters:
+params = cv2.SimpleBlobDetector_Params()
+
+# Change thresholds
+params.minThreshold = 10
+params.maxThreshold = 220
+
+# Filter by Area.
+params.filterByArea = True
+params.minArea = 250
+params.maxArea = 1200
+
+# Filter by Circularity
+params.filterByCircularity = True
+params.minCircularity = 0.1
+
+# Filter by Convexity
+params.filterByConvexity = False
+#params.filterByConvexity = True
+#params.minConvexity = 0.87
+
+# Filter by Inertia
+params.filterByInertia = False
+#params.filterByInertia = True
+#params.minInertiaRatio = 0.1
+
+# Filter by Color
+#params.filterByColor = True
+
+
+# NOTE: Bug in wrapper 
+detector = cv2.SimpleBlobDetector_create(params)
+
 while(True):
 
     # Capture frame-by-frame
     ret, frame = capture.read()
     
-    frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(frame2, 50, 150, apertureSize=3)
-    lines = cv2.HoughLines(edges,2,np.pi/45.0, 160)
-    
-    if lines is not None:
-        for i in range(0, len(lines)):
-            rho = lines[i][0][0]
-            theta = lines[i][0][1]
-            a = math.cos(theta)
-            b = math.sin(theta)
-            x0 = a * rho
-            y0 = b * rho
-            pt1 = (int(x0 + 1000*(-b)), int(y0 + 1000*(a)))
-            pt2 = (int(x0 - 1000*(-b)), int(y0 - 1000*(a)))
-            cv2.line(frame, pt1, pt2, (0,0,200), 2)
-
+#    frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    keypoints = detector.detect(frame)
+    frame = cv2.drawKeypoints(frame, keypoints, np.array([]), (0,0,255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
     output.write(frame);
 
     if cv2.waitKey(1) & 0xFF == ord('q'):

@@ -24,21 +24,69 @@ if output.isOpened():
 else:
     print "Video output pipeline creation failed!"
 
+# Set up the SimpleBlobdetector with default parameters.
+params = cv2.SimpleBlobDetector_Params()
+     
+# Change thresholds
+params.minThreshold = 20;
+params.maxThreshold = 256;
+     
+# Filter by Area.
+params.filterByArea = True
+params.minArea = 200
+     
+# Filter by Circularity
+params.filterByCircularity = False
+#params.minCircularity = 0.1
+     
+# Filter by Convexity
+params.filterByConvexity = True
+params.minConvexity = 0.5
+     
+# Filter by Inertia
+params.filterByInertia = False
+#params.filterByInertia =True
+#params.minInertiaRatio = 0.5
+     
+detector = cv2.SimpleBlobDetector_create(params)
+    
 while(True):
 
     # Capture frame-by-frame
     ret, frame = capture.read()
-    
-    frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(frame2, 50, 200, None, 3)
+    frame = cv2.GaussianBlur(frame, (3, 3), 0)
 
-    cv2.imshow("Edges", edges)
+ # Switch image from BGR colorspace to HSV
+    hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+    
+    # define range of purple color in HSV
+    purpleMin = (0, 100, 30)
+    purpleMax = (60, 255, 255)
+    
+    # Sets pixels to white if in purple range, else will be set to black
+    mask = cv2.inRange(hsv, purpleMin, purpleMax)
+        
+    # Bitwise-AND of mask and purple only image - only used for display
+    res = cv2.bitwise_and(frame, frame, mask=mask)
+
+    # mask = cv2.erode(mask, None, iterations=1)
+    # commented out erode call, detection more accurate without it
+
+    # dilate makes the in range areas larger
+    mask = cv2.dilate(mask, None, iterations=1)
+    
+    # Detect blobs.
+    reversemask=255-mask
+    keypoints = detector.detect(reversemask)
+
+    frame = cv2.drawKeypoints(frame, keypoints, np.array([]), (0,0,255),cv2.DRAW_MATCHES_FLAGS_DRAW_RICH_KEYPOINTS)
+    
+    cv2.imshow("Res", res)
 
     # Draw target lines over the video.
     cv2.line(frame, (320,0), (320,360), (50,100,0), 2)
     cv2.line(frame, (0,180), (640,180), (50,100,0), 2)
     output.write(frame);
-
 
     
     if cv2.waitKey(1) & 0xFF == ord('q'):

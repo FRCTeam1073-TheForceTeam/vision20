@@ -35,10 +35,6 @@ while(True):
     cv2.line(frame, (0,180), (640,180), (50,100,0), 2)
     output.write(frame);
     
-    frame2 = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    edges = cv2.Canny(frame2, 50, 150, None, 3)
-
-    
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 

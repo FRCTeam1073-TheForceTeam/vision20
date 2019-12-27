@@ -4,7 +4,7 @@ import math
 
 
 # Capture Video and set resolution from gstreamer pipeline
-capture_pipeline = "v4l2src device=%s ! video/x-raw,format=(string)YUY2, width=(int)320, height=(int)240, framerate=30/1 ! videoconvert ! video/x-raw, format(string>BGR ! appsink" % ('/dev/video1')
+capture_pipeline = "v4l2src device=%s ! video/x-raw,format=(string)YUY2, width=(int)320, height=(int)240, framerate=30/1 ! videoconvert ! video/x-raw,format=(string)BGR ! appsink" % ('/dev/video1')
 
 capture = cv2.VideoCapture(capture_pipeline)
 

@@ -101,10 +101,83 @@ GStreamer is also available for windows and we load GStreamer onto our
 driver station and have GStreamer scripts that allow us to view the
 streams from our JetsonNano in real-time.
 
-Once we get the basic opertions working, we can create dedicated
-GStreamer applications (this means programming in C or C++) and we can
-use GStreamer to provide 'hooks' into the hardware-accelerated video
-stream to add in custom processing steps.
+
+## Python / OpenCV 4.x
+
+The Jetson JetPack 4.3 version ships with OpenCV 4.x and Python
+bindings. In order to enable using these tools successfully you need
+to install some additional key development packages. These packages
+get you development tools, dependencies and utilities for python3
+
+sudo apt-get install python3-pip
+
+This will install several packages including python3-dev.
+
+sudo apt-get install ipython3 python3-numpy
+
+This will install a powerful, flexible interactive python3 shell and
+a python3 numerical library.
+
+We can then use Python, OpenCV and the integration of OpenCV with
+Gstreamer to create python applications that create input (and output)
+gstreamer pipelines for capturing data from the primary MIPI camera or
+web cameras, then apply OpenCV vision processing and overlay drawing
+to the images in Python, and then send the results to the output
+pipelien to have it compressed by accelerated hardware and sent out
+for viewing.
+
+The Python applications also make use of PyNetworkTables (The Python
+implementation of FRC Network Tables) allowing our vision programs to
+provide a Network Table interface to the main Robot Conrol program.
+
+The NetworkTable interface allows us to have the operator select modes
+of cameras, switch between overlays and allows our vision code to send
+data to autonomy and operator assist commands.
+
+### Vision Processing program outline:
+
+import numpy as np
+import cv2
+
+# Set up capture
+# Capture video from gstreamer pipeline:
+capture_pipeline = "< big string with gstreamer input pipeline> ! videoconvert ! video/x-raw,format=(string)BGR ! appsink"
+
+capture = cv2.VideoCapture(capture_pipeline)
+
+# Set up output
+# Send output video to gstreamer pipeline:
+output_pipeline = "appsrc ! videoconvert ! video/x-raw,format=(string)NV12 < big string with gstreamer output pipeline>"
+
+# Set up the rate and frame size of the output pipeline here as well.
+output = cv2.VideoWriter(output_pipeline, cv2.CAP_GSTREAMER, 30, (640, 360))
+
+
+if capture.isOpened() and output.isOpened():
+   print("Capture and output pipelines opened")
+else
+   print("Problem creating pipelines...")
+
+
+# Main vision processing loop goes here:
+
+while(True):
+	# Capture a frame:
+	ret, frame = capture.read()
+
+	# Do image processing, etc. operations in OpenCV
+	# ...
+	# Draw onto the frame using OpenCV
+	cv2.line(frame, (320,0), (320,360), (50,100,0),2)
+
+
+	# Send frame to compression pipeline:
+	output.write(frame)
+
+	# Check network tables for commands or inputs...
+	# TODO...
+	
+
 
 
 

@@ -1,0 +1,3 @@
+[submodule "pynetworktables"]
+	path = pynetworktables
+	url = https://github.com/robotpy/pynetworktables

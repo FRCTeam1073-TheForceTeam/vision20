@@ -134,10 +134,47 @@ The NetworkTable interface allows us to have the operator select modes
 of cameras, switch between overlays and allows our vision code to send
 data to autonomy and operator assist commands.
 
+The repo includes the current source release of Pynetworktables and
+you can install it by changing into the pynetworktables directory
+and running:
+
+sudo python3 ./setup.py install
+
+# LibRealsense
+
+If you want to use an Intel RealSense camera with the system then you
+also need to install a collection of dependencies and then download
+and build the Intel librealsense from github to install all the
+building blocks you need.
+
+The RealSense cameras connect over USB 3.0 and provide high resolution
+color imagery with high quality optics and the RS435 in particular
+provides global-shutter depth images (3d point cloud data) as well.
+
+Installing dependencies:
+
+sudo apt-get install libxinerama-dev libxcursor-dev
+
+Getting and installing librealsense sources:
+
+git clone https://github.com/IntelRealSense/librealsense.git
+cd librealsense
+mkdir cmake-build
+cd cmake-build
+cmake ..
+make
+make install
+
+
+This will get you librealsense and the realsense utilities for
+Intel RealSense cameras for NanoVision.
+
+
 ### Vision Processing program outline:
 
 import numpy as np
 import cv2
+from networktables import NetworkTables
 
 # Set up capture
 # Capture video from gstreamer pipeline:
@@ -158,15 +195,19 @@ if capture.isOpened() and output.isOpened():
 else
    print("Problem creating pipelines...")
 
+# Connect to network tables server:
+NetworkTables.initialize(server='127.0.0.1')
 
-# Main vision processing loop goes here:
+visionTable = NetworkTables.getTable("Vision")
 
+# Main vision processing loop:
 while(True):
 	# Capture a frame:
 	ret, frame = capture.read()
 
 	# Do image processing, etc. operations in OpenCV
 	# ...
+
 	# Draw onto the frame using OpenCV
 	cv2.line(frame, (320,0), (320,360), (50,100,0),2)
 
@@ -175,9 +216,10 @@ while(True):
 	output.write(frame)
 
 	# Check network tables for commands or inputs...
-	# TODO...
-	
-
+	# Send some data to the network table or read input from it.
+	# For example:
+	visionTable.setNumberArray("targetPos", [-1]))
+	mode = visionTable.getString("VisionMode", 'default')
 
 
 

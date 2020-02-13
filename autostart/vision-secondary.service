@@ -8,8 +8,8 @@ Type=simple
 Restart=always
 RestartSec=1
 User=team1073
-WorkingDirectory=/home/team1073/vision20/scripts
-ExecStart=/home/team1073/vision20/scripts/webcam /dev/video1 10.10.73.10
+WorkingDirectory=/home/team1073/Projects/vision20/scripts
+ExecStart=/home/team1073/vision20/scripts/webcam /dev/video0 10.10.73.10
 
 [Install]
 WantedBy=multi-user.target

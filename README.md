@@ -223,8 +223,50 @@ while(True):
 
 
 # Setting Up Video on Driverstation
-Go to users/team1073/FRCWorkspace/vision20. In the scripts folder there should be two files named "windowsplay" and "windowsplay2". Drag the two files onto the UPPER RIGHT CORNER of the desktop screen
-	
-Depending on the setup, the gstreamer pipeline may need to be modified. This will only be necessary if the type of camera changes, the video feedback is not correctly oriented, or if the resolution needs to be altered. 
 
-To run, double click on the programs while connected to the robot's radio. Ensure that the Jetson is properly wired and has stable ethernet connection. 
+You need to download and install the complete runtime version of
+gstreamer for Windows first. The video playback works by creating and
+configuring standard gstreamer video components. You can find
+gstreamer here: https://gstreamer.freedesktop.org/
+
+
+Go to users/team1073/FRCWorkspace/vision20. In the scripts folder
+there should be two files named "windowsplay" and "windowsplay2". Drag
+the two files onto the UPPER RIGHT CORNER of the desktop screen
+	
+Depending on the setup, the gstreamer pipeline may need to be
+modified. This will only be necessary if the type of camera changes,
+the video feedback is not correctly oriented, or if the resolution
+needs to be altered.
+
+To run, double click on the programs while connected to the robot's
+radio. Ensure that the Jetson is properly wired and has stable
+ethernet connection.
+
+
+# Setting up video servers to start automatically
+
+The autostart directory contains several files that are
+systemd service unit files. These need to be copied
+to:
+
+sudo cp <service file> /etc/lib/systemd/system
+
+Now reload configurations:
+
+sudo systemctl daemon-reload
+
+Now you enable the services you want enabled to auto-start:
+
+sudo systemctl enable <service name>
+
+
+You can then check on services using:
+
+systemctl status <service name>
+
+
+
+
+
+

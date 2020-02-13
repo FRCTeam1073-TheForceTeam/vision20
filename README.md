@@ -250,7 +250,7 @@ The autostart directory contains several files that are
 systemd service unit files. These need to be copied
 to:
 
-sudo cp <service file> /etc/lib/systemd/system
+sudo cp <service file> /etc/systemd/system
 
 Now reload configurations:
 
@@ -266,7 +266,9 @@ You can then check on services using:
 systemctl status <service name>
 
 
-
+Note that the autostart files assume you are using user team1073 and
+that you have checked out the vision repository on the nano system at:
+/home/team1073/Projects/vision20
 
 
 

@@ -222,4 +222,9 @@ while(True):
 	mode = visionTable.getString("VisionMode", 'default')
 
 
+# Setting Up Video on Driverstation
+Go to users/team1073/FRCWorkspace/vision20. In the scripts folder there should be two files named "windowsplay" and "windowsplay2". Drag the two files onto the UPPER RIGHT CORNER of the desktop screen
+	
+Depending on the setup, the gstreamer pipeline may need to be modified. This will only be necessary if the type of camera changes, the video feedback is not correctly oriented, or if the resolution needs to be altered. 
 
+To run, double click on the programs while connected to the robot's radio. Ensure that the Jetson is properly wired and has stable ethernet connection. 

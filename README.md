@@ -224,9 +224,12 @@ while(True):
 # Networking Requirements
 
 WiFi must be turned off and disabled.
+
 In the IPV4 settings:
+
 	IP address = 10.10.73.10
 	netmask = 255.0.0.0
+
 Ethernet connect to the robot when testing the cameras setup.
 
 
@@ -238,14 +241,18 @@ configuring standard gstreamer video components. You can find
 gstreamer here: https://gstreamer.freedesktop.org/
 
 To test that the Jetson is functional, first adjust the network settings, then:
+
 	1. Connect Jetson to robot ethernet (switch) and power from the PDP
+
 	2. Connect cameras to the Jetson (USB)
-	3. On a laptop (not DS), go to terminal and type
-		# ssh team1073@10.10.73.3
+
+	3. On a laptop (not DS), go to terminal and type ssh team1073@10.10.73.3
 	to connect to the JetsonNano to ensure it is working. The password is "team1073".
+
 	4. On the DS, go to "c:\gstreamer\1.0\x86_64\bin" from the home directory and run the following
 	(which can be copied from the windowsplay.bat files):
-	   	# gst-launch-1.0 -v udpsrc port=5801 ! "application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96" ! rtph264depay ! h264parse ! avdec_h264 ! timeoverlay ! autovideosink
+	   	gst-launch-1.0 -v udpsrc port=5801 ! "application/x-rtp, media=(string)video, clock-rate=(int)90000, encoding-name=(string)H264, payload=(int)96" ! rtph264depay ! h264parse ! avdec_h264 ! timeoverlay ! autovideosink
+
 	5. If the pipeline runs, then drag windowsplay.bat and windowsplay2.bat to the UPPER RIGHT CORNER of the DS
 	screen. If it does not run, fix it, and then complete this step. 		
 

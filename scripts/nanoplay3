@@ -4,4 +4,4 @@ gst-launch-1.0 -v udpsrc port=5803 ! \
 rtph264depay ! \
 h264parse ! \
 omxh264dec ! \
-nveglglessink -e
+nvegltransform ! nveglglessink "window-width=320" "window-height=240" -e
